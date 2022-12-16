@@ -149,6 +149,8 @@ def clean():
     cmdDeleteDirectory("{0}/{1}.sw/ARINC653_ARMV7A_Z7000/Release".format(sProjectVivadoPath, sProjectName))
     cmdDeleteDirectory("{0}/{1}.sw/fsbl".format(sProjectVivadoPath, sProjectName))
     cmdDeleteDirectory("{0}/{1}.sw/fsbl_bsp".format(sProjectVivadoPath, sProjectName))
+    cmdDeleteDirectory("{0}/{1}.sw/MEASURE/Debug".format(sProjectVivadoPath, sProjectName))
+    cmdDeleteDirectory("{0}/{1}.sw/MEASURE/Release".format(sProjectVivadoPath, sProjectName))
     cmdDeleteDirectory("{0}/{1}.sw/{2}_wrapper_hw_platform_0".format(sProjectVivadoPath, sProjectName, sBlockDesignName))
     cmdDeleteDirectory("{0}/{1}.sw/RemoteSystemsTempFiles".format(sProjectVivadoPath, sProjectName))
     cmdDeleteDirectory("{0}/{1}.sw/webtalk".format(sProjectVivadoPath, sProjectName))
