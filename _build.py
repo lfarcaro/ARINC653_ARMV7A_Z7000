@@ -185,7 +185,6 @@ def build():
     fBootgen.write("[bootloader]{0}\n".format(sProjectFSBLPath))
     fBootgen.write("{0}\n".format(sProjectBitstreamPath))
     fBootgen.write("{0}\n".format(sProjectBinaryPath))
-    fBootgen.write("{0}\n".format(r'D:\VivadoWorkspace\ARINC653_ARMV7A_Z7000_v2018.3\ARINC653_ARMV7A_Z7000.sw\MEASURE\Debug\MEASURE.elf'))
     fBootgen.write("}")
     fBootgen.close()
     cmdExecuteCommand(["{0}/bin/bootgen.bat".format(sXilinxSDKPath), "-image", "{0}/bootgen.bif".format(sProjectVivadoPath), "-arch", "zynq", "-o", "{0}/BOOT.bin".format(sProjectVivadoPath), "-w"])
