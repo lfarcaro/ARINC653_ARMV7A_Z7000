@@ -189,7 +189,7 @@ def build():
     fBootgen.write("{0}\n".format(sProjectBinaryPath))
     fBootgen.write("}")
     fBootgen.close()
-    cmdExecuteCommand(["{0}/bin/bootgen.bat".format(sXilinxSDKPath), "-image", "{0}/bootgen.bif".format(sProjectVivadoPath), "-arch", "zynq", "-o", "{0}/BOOT.bin".format(sProjectVivadoPath), "-w"])
+    cmdExecuteCommand(["{0}/bin/bootgen.bat".format(sXilinxSDKPath), "-image", "{0}/bootgen.bif".format(sProjectVivadoPath), "-arch", "zynq", "-o", "{0}/BOOT.bin".format(sProjectVivadoPath), "-w", "on"])
 
 # ------------------------- MAIN -------------------------
 
