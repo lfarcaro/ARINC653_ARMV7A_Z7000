@@ -134,6 +134,7 @@ def clean():
     cmdDeleteDirectory("{0}/{1}.hw".format(sProjectVivadoPath, sProjectName))
     cmdDeleteDirectory("{0}/{1}.ip_user_files".format(sProjectVivadoPath, sProjectName))
     cmdDeleteDirectory("{0}/{1}.runs".format(sProjectVivadoPath, sProjectName))
+    cmdDeleteDirectory("{0}/{1}.sim".format(sProjectVivadoPath, sProjectName))
     cmdDeleteDirectory("{0}/{1}.srcs".format(sProjectVivadoPath, sProjectName))
     cmdDeleteDirectory("{0}/Packages".format(sProjectVivadoPath))
     cmdDeleteFiles("{0}/{1}.xpr".format(sProjectVivadoPath, sProjectName))
@@ -171,6 +172,8 @@ def build():
     print('Building...')
     cmdExecuteCommand(['{0}/bin/vivado.bat'.format(sXilinxVivadoPath), '-mode', 'batch', '-source', '_build_01_soc_00_base.tcl'])
     cmdExecuteCommand(['{0}/bin/vivado.bat'.format(sXilinxVivadoPath), '-mode', 'batch', '-source', '_build_01_soc_01_gpio.tcl'])
+    cmdExecuteCommand(['{0}/bin/vivado.bat'.format(sXilinxVivadoPath), '-mode', 'batch', '-source', '_build_01_soc_02_qspi.tcl'])
+    cmdExecuteCommand(['{0}/bin/vivado.bat'.format(sXilinxVivadoPath), '-mode', 'batch', '-source', '_build_01_soc_03_sd.tcl'])
     cmdExecuteCommand(['{0}/bin/vivado.bat'.format(sXilinxVivadoPath), '-mode', 'batch', '-source', '_build_02_impl.tcl'])
     cmdExecuteCommand(['{0}/bin/xsct.bat'.format(sXilinxSDKPath), '_build_03_sw.tcl'])
 
@@ -182,9 +185,10 @@ def build():
     fBootgen.write("[bootloader]{0}\n".format(sProjectFSBLPath))
     fBootgen.write("{0}\n".format(sProjectBitstreamPath))
     fBootgen.write("{0}\n".format(sProjectBinaryPath))
+    fBootgen.write("{0}\n".format(r'D:\VivadoWorkspace\ARINC653_ARMV7A_Z7000_v2018.3\ARINC653_ARMV7A_Z7000.sw\MEASURE\Debug\MEASURE.elf'))
     fBootgen.write("}")
     fBootgen.close()
-    cmdExecuteCommand(["{0}/bin/bootgen.bat".format(sXilinxSDKPath), "-image", "{0}/bootgen.bif".format(sProjectVivadoPath), "-arch", "zynq", "-o", "{0}/BOOT.BIN".format(sProjectVivadoPath), "-w"])
+    cmdExecuteCommand(["{0}/bin/bootgen.bat".format(sXilinxSDKPath), "-image", "{0}/bootgen.bif".format(sProjectVivadoPath), "-arch", "zynq", "-o", "{0}/BOOT.bin".format(sProjectVivadoPath), "-w"])
 
 # ------------------------- MAIN -------------------------
 

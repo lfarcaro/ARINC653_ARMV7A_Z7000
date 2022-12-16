@@ -4,7 +4,7 @@ Bare-metal Real-Time Operating System (RTOS) for Xilinx Zynq-7000 Cortex-A9 (ARM
 # IDE installation:
 - Run Xilinx Unified Installer v2018.3 (or a similar superior version)
 - Select "Vivado HL WebPACK" installation
-- Ensure "Vivado Design Suite", "Software Development Kit (SDK)" and "SoCs/Zynq-7000" are marked
+- Ensure "Vivado Design Suite", "Software Development Kit (SDK)" (with the ARM Cortex-A9 Compiler Tool Chain) and "SoCs/Zynq-7000" are marked
 
 # Compilation configuration:
 - C/C++ Build / Settings / ARM v7 gcc compiler / Directories / Include Paths += "${workspace_loc:/${ProjName}/src/ARINC653_PORT/include}" (add to both "Debug" and "Release")
@@ -44,3 +44,18 @@ Bare-metal Real-Time Operating System (RTOS) for Xilinx Zynq-7000 Cortex-A9 (ARM
 		- Select the project's ELF file
 		- Click "OK"
 	- Click "Close"
+
+# Programming the bitstream into the QSPI memory:
+- Build the project
+- Open the project in Vivado
+- Open "Hardware Manager" -> "Open Target" -> "Auto Connect"
+- In window "Hardware", right-click "xc7z010_1" and open "Add Configuration Memory Device..."
+- Set "Manufacturer" to "Winbond"
+- Set "Type" to "qspi"
+- Set "Width" to "x4-single"
+- Select the "w25q128fv-qspi-x4-single" part number
+- Click "OK"
+- Accept programming the device by clicking "OK"
+- Set "Configuration file" to the "BOOT.bin" file built
+- Set "Zynq FSBL" to the "fsbl/Debug/fsbl.elf" file found in the software project directory
+- Click "OK"

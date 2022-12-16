@@ -23,5 +23,9 @@ createapp -name fsbl -app {Zynq FSBL} -hwproject ${blockdesign_name}_wrapper_hw_
 importprojects ${project_sdk_path}/ARINC653_ARMV7A_Z7000
 importprojects ${project_sdk_path}/ARINC653_ARMV7A_Z7000_bsp
 
+# Imports temporary projects
+importprojects ${project_sdk_path}/MEASURE
+importprojects ${project_sdk_path}/MEASURE_bsp
+
 # Builds the projects
 projects -build

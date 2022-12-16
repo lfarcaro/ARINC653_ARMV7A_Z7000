@@ -1,69 +1,77 @@
 // Includes
 #include "console.h"
 
+// XUartPs instance identifier array
+static unsigned char XUartPsDeviceId[CONSOLE_INSTANCECOUNT] = { XPAR_XUARTPS_0_DEVICE_ID, XPAR_XUARTPS_1_DEVICE_ID };
+
 // XUartPs configuration data pointer
-static XUartPs_Config *XUartPsConfigPtr;
+static XUartPs_Config *XUartPsConfigPtr[CONSOLE_INSTANCECOUNT];
 
 // XUartPs instance data
-static XUartPs XUartPsInst;
+static XUartPs XUartPsInst[CONSOLE_INSTANCECOUNT];
 
 // XUartPs instance data format
-static XUartPsFormat XUartPsInstFormat;
+static XUartPsFormat XUartPsInstFormat[CONSOLE_INSTANCECOUNT];
 
 // Number printing digits
 static const char * const PRINTN_DIGITS_LOWER = "0123456789abcdefghijklmnopqrstuvwxyz";
 static const char * const PRINTN_DIGITS_UPPER = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 // Startup method
-unsigned char CONSOLE_STARTUP(void) {
+unsigned char CONSOLE_STARTUP(unsigned char INSTANCE) {
+
+	// Checks instance
+	if (INSTANCE >= CONSOLE_INSTANCECOUNT) {
+		return 0;
+	}
 
 	// Looks up the UART controller's configuration
-	XUartPsConfigPtr = XUartPs_LookupConfig(XPAR_XUARTPS_0_DEVICE_ID);
-	if (XUartPsConfigPtr == NULL) {
+	XUartPsConfigPtr[INSTANCE] = XUartPs_LookupConfig(XUartPsDeviceId[INSTANCE]);
+	if (XUartPsConfigPtr[INSTANCE] == NULL) {
 		return 0;
 	}
 
 	// Resets the UART controller
-	XUartPs_ResetHw(XUartPsConfigPtr->BaseAddress);
+	XUartPs_ResetHw(XUartPsConfigPtr[INSTANCE]->BaseAddress);
 
 	// Initializes the UART controller's configuration
-	if (XUartPs_CfgInitialize(&XUartPsInst, XUartPsConfigPtr, XUartPsConfigPtr->BaseAddress) != XST_SUCCESS) {
+	if (XUartPs_CfgInitialize(&XUartPsInst[INSTANCE], XUartPsConfigPtr[INSTANCE], XUartPsConfigPtr[INSTANCE]->BaseAddress) != XST_SUCCESS) {
 		return 0;
 	}
 
 	// Sets the UART controller's operation mode
-	XUartPs_SetOperMode(&XUartPsInst, XUARTPS_OPER_MODE_NORMAL);
+	XUartPs_SetOperMode(&XUartPsInst[INSTANCE], XUARTPS_OPER_MODE_NORMAL);
 
 	// Sets the UART controller's data format
-	XUartPsInstFormat.BaudRate = 115200;
-	XUartPsInstFormat.DataBits = XUARTPS_FORMAT_8_BITS;
-	XUartPsInstFormat.Parity = XUARTPS_FORMAT_NO_PARITY;
-	XUartPsInstFormat.StopBits = XUARTPS_FORMAT_1_STOP_BIT;
-	if (XUartPs_SetDataFormat(&XUartPsInst, &XUartPsInstFormat) != XST_SUCCESS) {
+	XUartPsInstFormat[INSTANCE].BaudRate = 115200;
+	XUartPsInstFormat[INSTANCE].DataBits = XUARTPS_FORMAT_8_BITS;
+	XUartPsInstFormat[INSTANCE].Parity = XUARTPS_FORMAT_NO_PARITY;
+	XUartPsInstFormat[INSTANCE].StopBits = XUARTPS_FORMAT_1_STOP_BIT;
+	if (XUartPs_SetDataFormat(&XUartPsInst[INSTANCE], &XUartPsInstFormat[INSTANCE]) != XST_SUCCESS) {
 		return 0;
 	}
 	return 1;
 }
 
 // Buffer writing method
-unsigned int CONSOLE_WRITE_BUFFER(unsigned char *BUFFER, unsigned int LENGTH) {
-	LENGTH = XUartPs_Send(&XUartPsInst, BUFFER, LENGTH);
-	while (!XUartPs_IsTransmitEmpty(&XUartPsInst));
+unsigned int CONSOLE_WRITE_BUFFER(unsigned char INSTANCE, unsigned char *BUFFER, unsigned int LENGTH) {
+	LENGTH = XUartPs_Send(&XUartPsInst[INSTANCE], BUFFER, LENGTH);
+	while (!XUartPs_IsTransmitEmpty(&XUartPsInst[INSTANCE]));
 	return LENGTH;
 }
 
 // Buffer reading method
-unsigned int CONSOLE_READ_BUFFER(unsigned char *BUFFER, unsigned int LENGTH) {
-	return XUartPs_Recv(&XUartPsInst, BUFFER, LENGTH);
+unsigned int CONSOLE_READ_BUFFER(unsigned char INSTANCE, unsigned char *BUFFER, unsigned int LENGTH) {
+	return XUartPs_Recv(&XUartPsInst[INSTANCE], BUFFER, LENGTH);
 }
 
 // String printing method similar to 'puts'.
-void CONSOLE_PUTS(const char *STRING, unsigned int LENGTH) {
-	CONSOLE_WRITE_BUFFER((unsigned char *) STRING, LENGTH);
+void CONSOLE_PUTS(unsigned char INSTANCE, const char *STRING, unsigned int LENGTH) {
+	CONSOLE_WRITE_BUFFER(INSTANCE, (unsigned char *) STRING, LENGTH);
 }
 
 // Number printing method
-unsigned int CONSOLE_PRINTN(int VALUE, unsigned char BASE, unsigned char SIGNED, unsigned char UPPERCASE, unsigned char PADDING_CHARACTER, int PADDING_LENGTH) {
+unsigned int CONSOLE_PRINTN(unsigned char INSTANCE, int VALUE, unsigned char BASE, unsigned char SIGNED, unsigned char UPPERCASE, unsigned char PADDING_CHARACTER, int PADDING_LENGTH) {
 	unsigned char NEGATIVE;
 	unsigned int DIMENSION, INDEX;
 	unsigned char BUFFER[32];
@@ -117,7 +125,7 @@ unsigned int CONSOLE_PRINTN(int VALUE, unsigned char BASE, unsigned char SIGNED,
 	}
 
 	// Writes the string
-	return CONSOLE_WRITE_BUFFER(BUFFER, INDEX);
+	return CONSOLE_WRITE_BUFFER(INSTANCE, BUFFER, INDEX);
 }
 
 // Formatted printing method similar to 'printf'.
@@ -132,7 +140,7 @@ unsigned int CONSOLE_PRINTN(int VALUE, unsigned char BASE, unsigned char SIGNED,
 // %% - The % character itself
 // The % indicator can be immediately followed by a decimal number indicating the minimum length of the printed string,
 // which is left-padded with spaces by default or with zeroes if the '0' character immediately succeeds the % indicator.
-void CONSOLE_PRINTF(const char *FORMAT, ...) {
+void CONSOLE_PRINTF(unsigned char INSTANCE, const char *FORMAT, ...) {
 	unsigned char PADDING_CHARACTER;
 	int PADDING_LENGTH;
 	unsigned int VALUE, LENGTH;
@@ -152,7 +160,7 @@ void CONSOLE_PRINTF(const char *FORMAT, ...) {
 		}
 
 		// Writes contiguous section
-		CONSOLE_WRITE_BUFFER((unsigned char *) FORMAT, LENGTH);
+		CONSOLE_WRITE_BUFFER(INSTANCE, (unsigned char *) FORMAT, LENGTH);
 
 		// Skips contiguous section
 		FORMAT += LENGTH;
@@ -183,10 +191,10 @@ void CONSOLE_PRINTF(const char *FORMAT, ...) {
 					VALUE = va_arg(varargs, unsigned int);
 					// Writes padding characters
 					while (PADDING_LENGTH-- > 1) {
-						CONSOLE_WRITE_BUFFER(&PADDING_CHARACTER, 1);
+						CONSOLE_WRITE_BUFFER(INSTANCE, &PADDING_CHARACTER, 1);
 					}
 					// Writes the character
-					CONSOLE_WRITE_BUFFER((unsigned char *) &VALUE, 1);
+					CONSOLE_WRITE_BUFFER(INSTANCE, (unsigned char *) &VALUE, 1);
 					break;
 				}
 				// Decimal integer field
@@ -194,7 +202,7 @@ void CONSOLE_PRINTF(const char *FORMAT, ...) {
 					// Gets the varargs value
 					VALUE = va_arg(varargs, unsigned int);
 					// Prints value as signed decimal
-					CONSOLE_PRINTN(VALUE, 10, TRUE, FALSE, PADDING_CHARACTER, PADDING_LENGTH);
+					CONSOLE_PRINTN(INSTANCE, VALUE, 10, TRUE, FALSE, PADDING_CHARACTER, PADDING_LENGTH);
 					break;
 				}
 				// Unsigned decimal integer field
@@ -202,7 +210,7 @@ void CONSOLE_PRINTF(const char *FORMAT, ...) {
 					// Gets the varargs value
 					VALUE = va_arg(varargs, unsigned int);
 					// Prints value as unsigned decimal
-					CONSOLE_PRINTN(VALUE, 10, FALSE, FALSE, PADDING_CHARACTER, PADDING_LENGTH);
+					CONSOLE_PRINTN(INSTANCE, VALUE, 10, FALSE, FALSE, PADDING_CHARACTER, PADDING_LENGTH);
 					break;
 				}
 				// String field
@@ -216,10 +224,10 @@ void CONSOLE_PRINTF(const char *FORMAT, ...) {
 					}
 					// Writes padding characters
 					while (PADDING_LENGTH-- > LENGTH) {
-						CONSOLE_WRITE_BUFFER(&PADDING_CHARACTER, 1);
+						CONSOLE_WRITE_BUFFER(INSTANCE, &PADDING_CHARACTER, 1);
 					}
 					// Writes the string
-					CONSOLE_WRITE_BUFFER((unsigned char *) VALUE_STRING, LENGTH);
+					CONSOLE_WRITE_BUFFER(INSTANCE, (unsigned char *) VALUE_STRING, LENGTH);
 					break;
 				}
 				// Hexadecimal integer and pointer fields
@@ -227,33 +235,33 @@ void CONSOLE_PRINTF(const char *FORMAT, ...) {
 					// Gets the varargs value
 					VALUE = va_arg(varargs, unsigned int);
 					// Prints value as unsigned lower-case hexadecimal
-					CONSOLE_PRINTN(VALUE, 16, FALSE, FALSE, PADDING_CHARACTER, PADDING_LENGTH);
+					CONSOLE_PRINTN(INSTANCE, VALUE, 16, FALSE, FALSE, PADDING_CHARACTER, PADDING_LENGTH);
 					break;
 				}
 				case 'X': {
 					// Gets the varargs value
 					VALUE = va_arg(varargs, unsigned int);
 					// Prints value as unsigned upper-case hexadecimal
-					CONSOLE_PRINTN(VALUE, 16, FALSE, TRUE, PADDING_CHARACTER, PADDING_LENGTH);
+					CONSOLE_PRINTN(INSTANCE, VALUE, 16, FALSE, TRUE, PADDING_CHARACTER, PADDING_LENGTH);
 					break;
 				}
 				case 'p': {
 					// Gets the varargs value
 					VALUE = va_arg(varargs, unsigned int);
 					// Prints value as unsigned upper-case hexadecimal
-					CONSOLE_PRINTN(VALUE, 16, FALSE, TRUE, PADDING_CHARACTER, PADDING_LENGTH);
+					CONSOLE_PRINTN(INSTANCE, VALUE, 16, FALSE, TRUE, PADDING_CHARACTER, PADDING_LENGTH);
 					break;
 				}
 				// Field indicator escaping
 				case '%': {
 					// Writes the % character
-					CONSOLE_WRITE_BUFFER((unsigned char *) (FORMAT - 1), 1);
+					CONSOLE_WRITE_BUFFER(INSTANCE, (unsigned char *) (FORMAT - 1), 1);
 					break;
 				}
 				// Invalid fields
 				default: {
 					// Writes error indicator
-					CONSOLE_WRITE_BUFFER((unsigned char *) "<ERROR>", 7);
+					CONSOLE_WRITE_BUFFER(INSTANCE, (unsigned char *) "<ERROR>", 7);
 					break;
 				}
 			}

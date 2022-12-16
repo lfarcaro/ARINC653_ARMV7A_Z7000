@@ -2,7 +2,7 @@
 #define ALGORITHM_FIBCALL2_H_
 
 // Fibcall - Definitions
-#define FIBCALL1_N 100
+#define FIBCALL1_N 10000
 
 // Fibcall - Variables
 int algorithm_fibcall2_i;

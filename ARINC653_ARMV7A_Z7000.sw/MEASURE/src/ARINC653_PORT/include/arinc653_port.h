@@ -7,6 +7,7 @@
 #include "console.h"
 #include "interrupt.h"
 #include "mmu.h"
+#include "pmu.h"
 #include "timer_tick.h"
 #include "xstatus.h"
 #include "xil_cache.h"

@@ -39,6 +39,7 @@ void PARTITION1_DEFAULTPROCESS(void) {
 	RETURN_CODE_TYPE RETURN_CODE;
 	// SNIPPET_START PARTITION1_PARTITION_DEFAULTPROCESS_VARIABLES
 	unsigned int VALUE;
+	unsigned int COUNT1, COUNT2;
 	// SNIPPET_END
 
 	// SNIPPET_START PARTITION1_PARTITION_DEFAULTPROCESS_INITIALIZATION
@@ -76,6 +77,10 @@ void PARTITION1_DEFAULTPROCESS(void) {
 
 	// Sets prescaler
 	XScuTimer_SetPrescaler(&XScuTimerInst, 1);
+
+	// Configures event type - From ARM DDI 0406C.d (ID040418) pages B6-1896 and D3-2364
+	PMU_WRITE_PMXEVTYPER(0, 0x00000006);
+	PMU_WRITE_PMXEVTYPER(1, 0x00000007);
 	// SNIPPET_END
 
 	// Main loop
@@ -86,28 +91,42 @@ void PARTITION1_DEFAULTPROCESS(void) {
 		XScuTimer_LoadTimer(&XScuTimerInst, 0xFFFFFFFFu);
 
 		// Initializes algorithm
-		//ALGORITHM_BSORT1_INITIALIZE();
+		ALGORITHM_BSORT1_INITIALIZE();
 		ALGORITHM_DIJKSTRA1_INITIALIZE();
-		//ALGORITHM_FIBCALL1_INITIALIZE();
-		//ALGORITHM_LMS1_INITIALIZE();
+		ALGORITHM_FIBCALL1_INITIALIZE();
+		ALGORITHM_LMS1_INITIALIZE();
 
 		// Starts the timer
-		XScuTimer_Start(&XScuTimerInst);
+		//XScuTimer_Start(&XScuTimerInst);
+
+		// Resets PMCCNTR and all event counters
+		PMU_WRITE_PMCR(PMU_READ_PMCR() | 0x00000006);
+
+		// Enables event counters
+		PMU_WRITE_PMCNTENSET(0x80000003); // Enables PMCCNTR and PMXEVCNTR[0-1]
 
 		// Executes algorithm
-		//ALGORITHM_BSORT1_EXECUTE();
+		ALGORITHM_BSORT1_EXECUTE();
 		ALGORITHM_DIJKSTRA1_EXECUTE();
-		//ALGORITHM_FIBCALL1_EXECUTE();
-		//ALGORITHM_LMS1_EXECUTE();
+		ALGORITHM_FIBCALL1_EXECUTE();
+		ALGORITHM_LMS1_EXECUTE();
+
+		// Disables event counters
+		PMU_WRITE_PMCNTENCLR(0x80000003); // Disables PMCCNTR and PMXEVCNTR[0-1]
 
 		// Stops the timer
-		XScuTimer_Stop(&XScuTimerInst);
+		//XScuTimer_Stop(&XScuTimerInst);
+
+		// Reads event counter
+		VALUE = PMU_READ_PMCCNTR(); // Reads cycle counter
+		COUNT1 = PMU_READ_PMXEVCNTR(0); // Reads event counter
+		COUNT2 = PMU_READ_PMXEVCNTR(1); // Reads event counter
 
 		// Reads timer value
-		VALUE = 0xFFFFFFFFu - XScuTimer_GetCounterValue(&XScuTimerInst);
+		//VALUE = 0xFFFFFFFFu - XScuTimer_GetCounterValue(&XScuTimerInst);
 
 		// Prints value
-		CONSOLE_PRINTF("%d\n", VALUE);
+		CONSOLE_PRINTF(0, "%d %d %d\n", VALUE, COUNT1, COUNT2);
 		// SNIPPET_END
 	}
 }
