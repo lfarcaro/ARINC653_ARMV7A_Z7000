@@ -2,13 +2,13 @@
 #include "console.h"
 
 // XUartPs configuration data pointer
-static XUartPs_Config *XUartPsConfigPtr;
+static XUartPs_Config *XUartPsConfigPtr[CPU_CORECOUNT];
 
 // XUartPs instance data
-static XUartPs XUartPsInst;
+static XUartPs XUartPsInst[CPU_CORECOUNT];
 
 // XUartPs instance data format
-static XUartPsFormat XUartPsInstFormat;
+static XUartPsFormat XUartPsInstFormat[CPU_CORECOUNT];
 
 // Number printing digits
 static const char * const PRINTN_DIGITS_LOWER = "0123456789abcdefghijklmnopqrstuvwxyz";
@@ -16,30 +16,47 @@ static const char * const PRINTN_DIGITS_UPPER = "0123456789ABCDEFGHIJKLMNOPQRSTU
 
 // Startup method
 unsigned char CONSOLE_STARTUP(void) {
+	unsigned int CORE;
+
+	// Gets core ID
+	CORE = CP15CoreIDGet();
+
+	// Device ID
+	unsigned short DEVICE_ID;
+	switch (CORE) {
+	case 0:
+		DEVICE_ID = XPAR_XUARTPS_0_DEVICE_ID;
+		break;
+	case 1:
+		DEVICE_ID = XPAR_XUARTPS_1_DEVICE_ID;
+		break;
+	default:
+		return 0;
+	}
 
 	// Looks up the UART controller's configuration
-	XUartPsConfigPtr = XUartPs_LookupConfig(XPAR_XUARTPS_0_DEVICE_ID);
-	if (XUartPsConfigPtr == NULL) {
+	XUartPsConfigPtr[CORE] = XUartPs_LookupConfig(DEVICE_ID);
+	if (XUartPsConfigPtr[CORE] == NULL) {
 		return 0;
 	}
 
 	// Resets the UART controller
-	XUartPs_ResetHw(XUartPsConfigPtr->BaseAddress);
+	XUartPs_ResetHw(XUartPsConfigPtr[CORE]->BaseAddress);
 
 	// Initializes the UART controller's configuration
-	if (XUartPs_CfgInitialize(&XUartPsInst, XUartPsConfigPtr, XUartPsConfigPtr->BaseAddress) != XST_SUCCESS) {
+	if (XUartPs_CfgInitialize(&XUartPsInst[CORE], XUartPsConfigPtr[CORE], XUartPsConfigPtr[CORE]->BaseAddress) != XST_SUCCESS) {
 		return 0;
 	}
 
 	// Sets the UART controller's operation mode
-	XUartPs_SetOperMode(&XUartPsInst, XUARTPS_OPER_MODE_NORMAL);
+	XUartPs_SetOperMode(&XUartPsInst[CORE], XUARTPS_OPER_MODE_NORMAL);
 
 	// Sets the UART controller's data format
-	XUartPsInstFormat.BaudRate = 115200;
-	XUartPsInstFormat.DataBits = XUARTPS_FORMAT_8_BITS;
-	XUartPsInstFormat.Parity = XUARTPS_FORMAT_NO_PARITY;
-	XUartPsInstFormat.StopBits = XUARTPS_FORMAT_1_STOP_BIT;
-	if (XUartPs_SetDataFormat(&XUartPsInst, &XUartPsInstFormat) != XST_SUCCESS) {
+	XUartPsInstFormat[CORE].BaudRate = 115200;
+	XUartPsInstFormat[CORE].DataBits = XUARTPS_FORMAT_8_BITS;
+	XUartPsInstFormat[CORE].Parity = XUARTPS_FORMAT_NO_PARITY;
+	XUartPsInstFormat[CORE].StopBits = XUARTPS_FORMAT_1_STOP_BIT;
+	if (XUartPs_SetDataFormat(&XUartPsInst[CORE], &XUartPsInstFormat[CORE]) != XST_SUCCESS) {
 		return 0;
 	}
 	return 1;
@@ -47,14 +64,22 @@ unsigned char CONSOLE_STARTUP(void) {
 
 // Buffer writing method
 unsigned int CONSOLE_WRITE_BUFFER(unsigned char *BUFFER, unsigned int LENGTH) {
-	LENGTH = XUartPs_Send(&XUartPsInst, BUFFER, LENGTH);
-	while (!XUartPs_IsTransmitEmpty(&XUartPsInst));
+	unsigned int CORE;
+	// Gets core ID
+	CORE = CP15CoreIDGet();
+	// Sends buffer
+	LENGTH = XUartPs_Send(&XUartPsInst[CORE], BUFFER, LENGTH);
+	while (!XUartPs_IsTransmitEmpty(&XUartPsInst[CORE]));
 	return LENGTH;
 }
 
 // Buffer reading method
 unsigned int CONSOLE_READ_BUFFER(unsigned char *BUFFER, unsigned int LENGTH) {
-	return XUartPs_Recv(&XUartPsInst, BUFFER, LENGTH);
+	unsigned int CORE;
+	// Gets core ID
+	CORE = CP15CoreIDGet();
+	// Receives buffer
+	return XUartPs_Recv(&XUartPsInst[CORE], BUFFER, LENGTH);
 }
 
 // String printing method similar to 'puts'.
